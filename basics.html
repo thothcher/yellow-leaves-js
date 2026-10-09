@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JS ფოთლები</title>
+    <meta name="description" content="JavaScript-ის 8 ძირითადი თემა ერთ ჯაჭვად: მაგალითები, ტესტი, ბაგების ძებნა და კოდის დალაგება.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="basics.css">
+
+    <!-- order matters: data → helpers → features → main -->
+    <script src="src/icons.js" defer></script>
+    <script src="src/helpers.js" defer></script>
+    <script src="src/data/topics.js" defer></script>
+    <script src="src/data/quiz.js" defer></script>
+    <script src="src/data/practice.js" defer></script>
+    <script src="src/topics.js" defer></script>
+    <script src="src/quiz.js" defer></script>
+    <script src="src/bugs.js" defer></script>
+    <script src="src/order.js" defer></script>
+    <script src="src/output.js" defer></script>
+    <script src="src/leaves.js" defer></script>
+    <script src="src/music.js" defer></script>
+    <script src="src/main.js" defer></script>
+</head>
+<body>
+    <canvas id="leaves" aria-hidden="true"></canvas>
+    <div class="yt-wrap" id="yt-wrap" aria-hidden="true"></div>
+
+    <header class="hero">
+        <p class="hero__eyebrow">Vanilla JavaScript</p>
+        <h1 class="hero__title">JS-ის 8 ფოთოლი</h1>
+        <p class="hero__lead">
+            ცვლადიდან API-მდე, ერთ ტოტზე. ყოველი თემა წინაზეა დაშენებული,
+            ერთი მაგალითი კი ბოლომდე მიჰყვება: <strong>ფოთლების ბაღი</strong>.
+        </p>
+
+        <ol class="howto" aria-label="როგორ ვისწავლოთ">
+            <li><span class="howto__no">1</span><span><b>გაიგე</b> ცხოვრებისეული მაგალითით</span></li>
+            <li><span class="howto__no">2</span><span><b>ნახე</b> კოდი და გაუშვი</span></li>
+            <li><span class="howto__no">3</span><span><b>შეამოწმე</b> თავი პრაქტიკაში</span></li>
+        </ol>
+
+        <a class="btn btn--primary" href="#variables">
+            დავიწყოთ
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+        </a>
+    </header>
+
+    <nav class="chain" aria-label="თემების ჯაჭვი">
+        <div class="chain__bar">
+            <ol class="chain__list" id="chain"></ol>
+
+            <button class="music" id="music-btn" type="button" aria-pressed="false" aria-label="მუსიკის ჩართვა">
+                <span class="music__icon">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+                </span>
+                <span class="music__eq" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span class="music__text">
+                    <span class="music__title">გია ყანჩელი</span>
+                    <span class="music__sub">ყვითელი ფოთლები</span>
+                </span>
+            </button>
+        </div>
+    </nav>
+
+    <main class="wrap">
+        <div class="topics" id="topics"></div>
+
+        <section class="practice" id="practice" aria-labelledby="practice-title">
+            <header class="practice__intro">
+                <p class="eyebrow">პრაქტიკა</p>
+                <h2 id="practice-title">შეამოწმე, რა ისწავლე</h2>
+                <p>ოთხი სავარჯიშო: ყოველი შემდეგი ცოტა უფრო რთულია.</p>
+                <nav class="practice__links" aria-label="სავარჯიშოები">
+                    <a href="#quiz"><span class="practice__no">1</span>ტესტი</a>
+                    <a href="#bugs"><span class="practice__no">2</span>იპოვე ბაგი</a>
+                    <a href="#order"><span class="practice__no">3</span>დაალაგე კოდი</a>
+                    <a href="#output"><span class="practice__no">4</span>რას დაბეჭდავს?</a>
+                </nav>
+            </header>
+
+            <!-- 1. Quiz -->
+            <section class="quiz card" id="quiz" aria-labelledby="quiz-title">
+                <header class="quiz__head">
+                    <div>
+                        <p class="eyebrow">1 · ტესტი</p>
+                        <h2 id="quiz-title">ეს კოდი რომელ თემას ეკუთვნის?</h2>
+                    </div>
+                    <p class="quiz__score" id="quiz-score" aria-live="polite">0 / 0</p>
+                </header>
+
+                <fieldset class="filter">
+                    <legend class="filter__legend">რომელი თემები შევიდეს ტესტში?</legend>
+                    <div class="filter__chips" id="quiz-filter"></div>
+                    <p class="filter__note" id="quiz-filter-note" aria-live="polite"></p>
+                </fieldset>
+
+                <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="quiz-progress">
+                    <span class="progress__bar"></span>
+                </div>
+
+                <div class="quiz__body" id="quiz-body"></div>
+
+                <p class="quiz__hint">მინიშნება: პასუხისთვის დააჭირე ვარიანტის ნომერს (<kbd>1</kbd>, <kbd>2</kbd>…), შემდეგზე გადასასვლელად <kbd>Enter</kbd>.</p>
+            </section>
+
+            <!-- 2. Bug hunt -->
+            <section class="quiz card" id="bugs" aria-labelledby="bugs-title">
+                <header class="quiz__head">
+                    <div>
+                        <p class="eyebrow">2 · იპოვე ბაგი</p>
+                        <h2 id="bugs-title">სად იმალება შეცდომა?</h2>
+                    </div>
+                    <p class="quiz__score" id="bugs-score" aria-live="polite">0 / 0</p>
+                </header>
+                <div class="step-dots" id="bugs-nav" aria-label="ბაგები"></div>
+                <div id="bugs-body"></div>
+            </section>
+
+            <!-- 3. Order the code -->
+            <section class="quiz card" id="order" aria-labelledby="order-title">
+                <header class="quiz__head">
+                    <div>
+                        <p class="eyebrow">3 · დაალაგე კოდი</p>
+                        <h2 id="order-title">ააწყვე პროგრამა ნაბიჯ-ნაბიჯ</h2>
+                    </div>
+                    <p class="quiz__score" id="order-score" aria-live="polite">0 / 0</p>
+                </header>
+                <div class="tabs" id="order-tabs" role="tablist" aria-label="ამოცანები"></div>
+                <div id="order-body"></div>
+            </section>
+
+            <!-- 4. Predict the output -->
+            <section class="quiz card" id="output" aria-labelledby="output-title">
+                <header class="quiz__head">
+                    <div>
+                        <p class="eyebrow">4 · რას დაბეჭდავს?</p>
+                        <h2 id="output-title">წაიკითხე კოდი და გამოიცანი შედეგი</h2>
+                    </div>
+                    <p class="quiz__score" id="output-score" aria-live="polite">0 / 0</p>
+                </header>
+                <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="output-progress">
+                    <span class="progress__bar"></span>
+                </div>
+                <div id="output-body"></div>
+            </section>
+        </section>
+    </main>
+
+    <footer class="foot">
+        <p>
+            გაკეთებულია vanilla JS-ით
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
+            ფრეიმვორკების გარეშე.
+        </p>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dice Roller</title>
+<style>
+  :root {
+    --bg: #11151b;
+    --panel: #1a2029;
+    --line: #2b3441;
+    --text: #e9edf2;
+    --muted: #8d99a8;
+    --accent: #f2b441;
+    --accent-ink: #2a1c00;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 24px 16px;
+    background: radial-gradient(ellipse at 50% 0%, #1c2430 0%, var(--bg) 60%);
+    color: var(--text);
+    font: 16px/1.5 system-ui, "Segoe UI", Roboto, sans-serif;
+  }
+
+  .app { width: min(760px, 100%); }
+
+  header { text-align: center; margin-bottom: 18px; }
+  h1 { margin: 0; font-size: 1.8rem; letter-spacing: .02em; }
+  .sub { margin: 4px 0 0; color: var(--muted); font-size: .95rem; }
+  kbd {
+    padding: 1px 7px;
+    border: 1px solid var(--line);
+    border-bottom-width: 2px;
+    border-radius: 5px;
+    background: var(--panel);
+    font: inherit;
+    font-size: .85em;
+  }
+
+  /* ---------- table ---------- */
+  .stage {
+    --s: min(var(--base, 100px), 26vw);
+    position: relative;
+    overflow: hidden;
+    min-height: clamp(300px, 52vh, 440px);
+    padding: calc(var(--s) * .8) 24px;
+    display: flex;
+    flex-wrap: wrap;
+    align-content: center;
+    justify-content: center;
+    gap: calc(var(--s) * .55) calc(var(--s) * .7);
+    border-radius: 22px;
+    background: radial-gradient(ellipse at 50% 35%, #238a58 0%, #146a41 55%, #0c4a2d 100%);
+    box-shadow:
+      inset 0 0 0 8px #5b3b20,
+      inset 0 0 0 10px #3d2713,
+      inset 0 0 70px rgba(0, 0, 0, .55),
+      0 20px 50px rgba(0, 0, 0, .45);
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .stage.busy { cursor: default; }
+
+  .slot { position: relative; width: var(--s); height: var(--s); }
+
+  .shadow {
+    position: absolute;
+    left: 2%;
+    top: calc(100% - var(--s) * .02);
+    width: 96%;
+    height: calc(var(--s) * .3);
+    border-radius: 50%;
+    background: radial-gradient(ellipse at center, rgba(0, 0, 0, .7) 0%, rgba(0, 0, 0, 0) 70%);
+    opacity: .7;
+  }
+
+  .die {
+    position: absolute;
+    inset: 0;
+    perspective: calc(var(--s) * 7);
+  }
+
+  .cube {
+    position: absolute;
+    inset: 0;
+    transform-style: preserve-3d;
+  }
+
+  .face, .core { position: absolute; }
+
+  .face {
+    inset: 0;
+    padding: calc(var(--s) * .15);
+    display: grid;
+    grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+    border-radius: calc(var(--s) * .17);
+    background: radial-gradient(circle at 30% 25%, #fffef8 0%, #f3ecda 55%, #e3d9be 100%);
+    box-shadow: inset 0 0 calc(var(--s) * .09) rgba(120, 95, 40, .35);
+  }
+  /* light/dark overlay, updated from JS as the die tumbles */
+  .face::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: #1b1204;
+    opacity: var(--dark, 0);
+    pointer-events: none;
+  }
+  /* solid core: fills the gaps left by the rounded face corners */
+  .core { inset: calc(var(--s) * .06); background: #cbc2aa; }
+
+  .face span { display: grid; place-items: center; }
+  .pip {
+    width: 76%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #4a4a4a 0%, #0c0c0c 70%);
+    box-shadow: inset 0 -1px 2px rgba(255, 255, 255, .25);
+  }
+  .face[data-v="1"] .pip {
+    width: 90%;
+    background: radial-gradient(circle at 35% 30%, #ff6a6a 0%, #b00000 72%);
+  }
+
+  /* ---------- controls ---------- */
+  .panel {
+    margin-top: 18px;
+    padding: 16px 18px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: var(--panel);
+  }
+
+  .result { min-width: 130px; }
+  .result .label { display: block; color: var(--muted); font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; }
+  #total { display: inline-block; font-size: 2.4rem; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  #breakdown { display: block; color: var(--muted); font-size: .9rem; min-height: 1.4em; }
+
+  .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .seg button {
+    width: 38px; height: 40px;
+    border: 0; border-right: 1px solid var(--line);
+    background: transparent; color: var(--text);
+    font: inherit; cursor: pointer;
+  }
+  .seg button:last-child { border-right: 0; }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+  .seg button:not([aria-pressed="true"]):hover { background: #232c38; }
+
+  button { font: inherit; }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button:disabled { cursor: not-allowed; opacity: .6; }
+
+  .roll {
+    height: 44px; padding: 0 26px;
+    border: 0; border-radius: 12px;
+    background: var(--accent); color: var(--accent-ink);
+    font-weight: 700; font-size: 1.05rem; cursor: pointer;
+    box-shadow: 0 4px 0 #b9852a;
+    transition: transform .08s, box-shadow .08s;
+  }
+  .roll:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 #b9852a; }
+
+  .ghost {
+    height: 40px; padding: 0 14px;
+    border: 1px solid var(--line); border-radius: 10px;
+    background: transparent; color: var(--muted); cursor: pointer;
+  }
+  .ghost:hover { color: var(--text); background: #232c38; }
+
+  /* ---------- history ---------- */
+  .history { margin-top: 18px; }
+  .history h2 { margin: 0 0 8px; font-size: .8rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+  #history { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 8px; }
+  #history li {
+    padding: 4px 12px;
+    border: 1px solid var(--line); border-radius: 999px;
+    background: var(--panel);
+    font-size: .9rem; font-variant-numeric: tabular-nums;
+  }
+  #history li b { color: var(--accent); }
+  #history .empty { border-style: dashed; color: var(--muted); }
+
+  @media (max-width: 520px) {
+    .panel { justify-content: center; text-align: center; }
+  }
+</style>
+</head>
+<body>
+<main class="app">
+  <header>
+    <h1>Dice Roller</h1>
+    <p class="sub">Click the table, press <kbd>Space</kbd>, or hit Roll.</p>
+  </header>
+
+  <section class="stage" id="stage" aria-label="Dice table"></section>
+ 
+  <!-- tags -->
+  <section class="panel">
+    <div class="result" aria-live="polite">
+      <span class="label">Total</span>
+      <span id="total">&mdash;</span>
+      <span id="breakdown"></span>
+    </div>
+    <div class="controls">
+               <!-- attributes -->
+      <div class="seg" id="counts" role="group" aria-label="Number of dice"></div>
+      <button class="roll" id="roll" type="button">Roll dice</button>
+      <button class="ghost" id="mute" type="button" aria-pressed="false">Sound on</button>
+    </div>
+  </section>
+
+  <section class="history">
+    <h2>History</h2>
+    <ol id="history"></ol>
+  </section>
+</main>
+
+<script>
+(() => {
+  'use strict';
+
+  // ---------- cube geometry ----------
+  // Opposite faces add up to 7. [value, transform that places the face on the cube]
+  const FACES = [
+    [1, 'rotateY(0deg)'],
+    [6, 'rotateY(180deg)'],
+    [4, 'rotateY(90deg)'],
+    [3, 'rotateY(-90deg)'],
+    [2, 'rotateX(90deg)'],
+    [5, 'rotateX(-90deg)'],
+  ];
+  const NORMALS = { 1: [0, 0, 1], 6: [0, 0, -1], 4: [1, 0, 0], 3: [-1, 0, 0], 2: [0, -1, 0], 5: [0, 1, 0] };
+  // cube rotation [x, y] (deg) that brings a face to the front
+  const REST = { 1: [0, 0], 2: [-90, 0], 3: [0, 90], 4: [0, -90], 5: [90, 0], 6: [0, 180] };
+  const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+
+  // Viewing angle. The transform lists below always have the same functions in the
+  // same order, so the browser interpolates them number by number.
+  const TILT = 'rotateX(-24deg) rotateY(-28deg)';
+  const cubeTransform = (value, z, turnsX, turnsY) => {
+    const [x, y] = REST[value];
+    return `${TILT} rotateZ(${z}deg) rotateX(${x + 360 * turnsX}deg) rotateY(${y + 360 * turnsY}deg)`;
+  };
+
+  const SIZE_FOR = { 1: 120, 2: 108, 3: 96, 4: 86, 5: 76, 6: 68 };
+  const SHADOW_OPACITY = 0.7;
+
+  // light comes from above-left-front (screen space, y points down)
+  const LIGHT = (() => {
+    const v = [-0.35, -0.75, 0.55];
+    const len = Math.hypot(...v);
+    return v.map(c => c / len);
+  })();
+
+  // ---------- dom ----------
+  const $ = id => document.getElementById(id);
+  const stage = $('stage'), rollBtn = $('roll'), muteBtn = $('mute');
+  const totalEl = $('total'), breakdownEl = $('breakdown'), historyEl = $('history'), countsEl = $('counts');
+
+  const state = { count: 2, rolling: false, muted: false, dice: [], history: [] };
+
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const randInt = (a, b) => Math.floor(rand(a, b + 1));
+  const sign = () => (Math.random() < 0.5 ? -1 : 1);
+
+  // ---------- building dice ----------
+  function faceHTML(value) {
+    const cells = Array.from({ length: 9 }, (_, i) =>
+      `<span>${PIPS[value].includes(i) ? '<b class="pip"></b>' : ''}</span>`).join('');
+    return cells;
+  }
+
+  function makeDie() {
+    const slot = document.createElement('div');
+    slot.className = 'slot';
+
+    const faces = FACES.map(([v, t]) =>
+      `<div class="face" data-v="${v}" style="transform:${t} translateZ(calc(var(--s) / 2))">${faceHTML(v)}</div>`).join('');
+    const core = FACES.map(([, t]) =>
+      `<div class="core" style="transform:${t} translateZ(calc(var(--s) / 2 - var(--s) * .06))"></div>`).join('');
+
+    slot.innerHTML = `<div class="shadow"></div><div class="die"><div class="cube">${core}${faces}</div></div>`;
+
+    const cube = slot.querySelector('.cube');
+    return {
+      slot,
+      cube,
+      die: slot.querySelector('.die'),
+      shadow: slot.querySelector('.shadow'),
+      faces: [...cube.querySelectorAll('.face')].map(el => ({ el, n: NORMALS[el.dataset.v] })),
+      value: 1,
+    };
+  }
+
+  function placeAtRest(d, value) {
+    const jx = rand(-0.1, 0.1) * d.slot.offsetWidth;
+    d.value = value;
+    d.die.style.transform = `translate(${jx}px, 0px)`;
+    d.shadow.style.transform = `translateX(${jx}px) scale(1)`;
+    d.cube.style.transform = cubeTransform(value, rand(-14, 14), 0, 0);
+  }
+
+  function buildDice(count) {
+    state.count = count;
+    stage.replaceChildren();
+    stage.style.setProperty('--base', SIZE_FOR[count] + 'px');
+    state.dice = Array.from({ length: count }, () => {
+      const d = makeDie();
+      stage.append(d.slot);
+      placeAtRest(d, randInt(1, 6));
+      shade(d);
+      return d;
+    });
+    totalEl.textContent = '—';
+    breakdownEl.textContent = '';
+    [...countsEl.children].forEach(b => b.setAttribute('aria-pressed', String(+b.textContent === count)));
+  }
+
+  // ---------- lighting ----------
+  // Darken each face according to how much it points away from the light.
+  function shade(d) {
+    let m;
+    try { m = new DOMMatrixReadOnly(getComputedStyle(d.cube).transform); } catch { return; }
+    for (const { el, n: [x, y, z] } of d.faces) {
+      const nx = m.m11 * x + m.m21 * y + m.m31 * z;
+      const ny = m.m12 * x + m.m22 * y + m.m32 * z;
+      const nz = m.m13 * x + m.m23 * y + m.m33 * z;
+      const lit = Math.max(0, nx * LIGHT[0] + ny * LIGHT[1] + nz * LIGHT[2]);
+      el.style.setProperty('--dark', (0.36 * (1 - lit)).toFixed(3));
+    }
+  }
+
+  // ---------- physics ----------
+  // Height of a ball dropped from h = 1 that keeps bouncing with restitution e (g = 1).
+  // Returns sample points {u, h} (u = 0..1 over the whole motion) and the moments it hits the table.
+  function bouncePath(e) {
+    const pts = [], hits = [];
+    let t = 0;
+    const segment = (dur, height) => {
+      const n = Math.max(6, Math.round(dur * 10));
+      for (let k = pts.length ? 1 : 0; k <= n; k++) {
+        pts.push({ t: t + (dur * k) / n, h: Math.max(0, height((dur * k) / n)) });
+      }
+      t += dur;
+    };
+
+    let v = Math.SQRT2;                                  // speed at the first impact
+    segment(Math.SQRT2, tau => 1 - (tau * tau) / 2);     // the fall
+    hits.push({ t, power: 1 });
+    while (v * e > 0.15) {
+      v *= e;
+      const speed = v;
+      segment(2 * speed, tau => speed * tau - (tau * tau) / 2);
+      hits.push({ t, power: speed / Math.SQRT2 });
+    }
+    return {
+      pts: pts.map(p => ({ u: Math.min(1, p.t / t), h: p.h })),
+      hits: hits.map(h => ({ u: h.t / t, power: h.power })),
+    };
+  }
+
+  // ---------- sound ----------
+  let audio = null, noise = null;
+
+  function getAudio() {
+    if (!audio) {
+      try {
+        audio = new (window.AudioContext || window.webkitAudioContext)();
+        noise = audio.createBuffer(1, Math.floor(audio.sampleRate * 0.12), audio.sampleRate);
+        const data = noise.getChannelData(0);
+        for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+      } catch { audio = null; }
+    }
+    if (audio && audio.state === 'suspended') audio.resume();
+    return audio;
+  }
+
+  // short "clack" of a die hitting the table, `ms` from now
+  function clack(ms, power) {
+    if (!audio) return;
+    const t0 = audio.currentTime + ms / 1000;
+
+    const src = audio.createBufferSource();
+    src.buffer = noise;
+    const band = audio.createBiquadFilter();
+    band.type = 'bandpass';
+    band.frequency.value = rand(1500, 2800);
+    band.Q.value = 1.1;
+    const g = audio.createGain();
+    g.gain.setValueAtTime(0.55 * power, t0);
+    g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.09);
+    src.connect(band).connect(g).connect(audio.destination);
+    src.start(t0);
+
+    const osc = audio.createOscillator();
+    const og = audio.createGain();
+    osc.frequency.setValueAtTime(190, t0);
+    osc.frequency.exponentialRampToValueAtTime(70, t0 + 0.08);
+    og.gain.setValueAtTime(0.35 * power, t0);
+    og.gain.exponentialRampToValueAtTime(0.001, t0 + 0.09);
+    osc.connect(og).connect(audio.destination);
+    osc.start(t0);
+    osc.stop(t0 + 0.1);
+  }
+
+  // ---------- rolling ----------
+  function roll() {
+    if (state.rolling) return;
+    state.rolling = true;
+    stage.classList.add('busy');
+    rollBtn.disabled = true;
+    rollBtn.textContent = 'Rolling…';
+    [...countsEl.children].forEach(b => (b.disabled = true));
+    if (!state.muted) getAudio();
+
+    const stageRect = stage.getBoundingClientRect();
+    const animations = [];
+    const values = [];
+
+    state.dice.forEach((d, i) => {
+      const value = randInt(1, 6);
+      values.push(value);
+
+      const r = d.slot.getBoundingClientRect();
+      const s = r.width;
+      const cx = r.left + s / 2 - stageRect.left;
+      const cy = r.top + s / 2 - stageRect.top;
+
+      const x0 = sign() * rand(s * 1.5, Math.max(s * 2, stageRect.width * 0.45)); // where it is thrown from
+      const H = cy + s * 1.4;                                                      // starts above the table
+      const jx = rand(-0.1, 0.1) * s;                                              // where it comes to rest
+      const zf = rand(-14, 14);
+      const duration = rand(1500, 2100);
+      const delay = i * 70;
+      const turnsX = randInt(2, 3) * sign();
+      const turnsY = randInt(2, 3) * sign();
+
+      const { pts, hits } = bouncePath(rand(0.46, 0.58));
+      const x = u => jx + (x0 - jx) * Math.pow(1 - u, 1.6);
+
+      // final (resting) state goes inline; the animations only describe the way there
+      d.value = value;
+      d.die.style.transform = `translate(${jx}px, 0px)`;
+      d.shadow.style.transform = `translateX(${jx}px) scale(1)`;
+      d.cube.style.transform = cubeTransform(value, zf, turnsX, turnsY);
+
+      const timing = { duration, delay, fill: 'backwards' };
+
+      animations.push(d.die.animate(pts.map(p => ({
+        offset: p.u,
+        transform: `translate(${x(p.u)}px, ${-p.h * H}px)`,
+      })), { ...timing, easing: 'linear' }));
+
+      animations.push(d.shadow.animate(pts.map(p => ({
+        offset: p.u,
+        transform: `translateX(${x(p.u)}px) scale(${1 - 0.45 * Math.min(1, p.h)})`,
+        opacity: SHADOW_OPACITY * (1 - 0.65 * Math.min(1, p.h)),
+      })), { ...timing, easing: 'linear' }));
+
+      const start = `${TILT} rotateZ(${rand(-90, 90)}deg) rotateX(${rand(-180, 180)}deg) rotateY(${rand(-180, 180)}deg)`;
+      animations.push(d.cube.animate([
+        { transform: start },
+        { transform: cubeTransform(value, zf, turnsX, turnsY) },
+      ], { ...timing, easing: 'cubic-bezier(.1, .6, .25, 1)' }));
+
+      if (!state.muted) hits.forEach(h => clack(delay + h.u * duration, h.power));
+    });
+
+    const loop = () => {
+      state.dice.forEach(shade);
+      if (state.rolling) requestAnimationFrame(loop);
+    };
+    loop();
+
+    Promise.allSettled(animations.map(a => a.finished)).then(() => finish(values));
+  }
+
+  function finish(values) {
+    state.rolling = false;
+    state.dice.forEach(shade);
+    stage.classList.remove('busy');
+    rollBtn.disabled = false;
+    rollBtn.textContent = 'Roll again';
+    [...countsEl.children].forEach(b => (b.disabled = false));
+
+    const total = values.reduce((a, b) => a + b, 0);
+    totalEl.textContent = total;
+    totalEl.animate([{ transform: 'scale(1.35)' }, { transform: 'scale(1)' }], { duration: 320, easing: 'ease-out' });
+    breakdownEl.textContent = values.length > 1 ? values.join(' + ') : '';
+
+    state.history.unshift({ values, total });
+    state.history.length = Math.min(state.history.length, 10);
+    renderHistory();
+  }
+
+  function renderHistory() {
+    historyEl.replaceChildren(...state.history.map(({ values, total }) => {
+      const li = document.createElement('li');
+      li.innerHTML = values.length > 1 ? `${values.join(' + ')} = <b>${total}</b>` : `<b>${total}</b>`;
+      return li;
+    }));
+  }
+
+  function showEmptyHistory() {
+    const li = document.createElement('li');
+    li.className = 'empty';
+    li.textContent = 'No rolls yet';
+    historyEl.append(li);
+  }
+
+  // ---------- wiring ----------
+  for (let n = 1; n <= 6; n++) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = n;
+    b.setAttribute('aria-label', n === 1 ? '1 die' : `${n} dice`);
+    b.addEventListener('click', () => { if (!state.rolling) buildDice(n); });
+    countsEl.append(b);
+  }
+
+  rollBtn.addEventListener('click', roll);
+  stage.addEventListener('click', roll);
+
+  muteBtn.addEventListener('click', () => {
+    state.muted = !state.muted;
+    muteBtn.setAttribute('aria-pressed', String(state.muted));
+    muteBtn.textContent = state.muted ? 'Sound off' : 'Sound on';
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.repeat || e.target.closest('button')) return;
+    if (e.code === 'Space' || e.key === 'r' || e.key === 'R') {
+      e.preventDefault();
+      roll();
+    }
+  });
+
+  buildDice(state.count);
+  showEmptyHistory();
+})();
+</script>
+</body>
+</html>

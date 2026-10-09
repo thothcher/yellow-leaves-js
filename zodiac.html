@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ზოდიაქოს ნიშნები</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;600;700&display=swap">
+    <style>
+        :root {
+            --bg: #0f1226;
+            --bg-soft: #171b3a;
+            --card: #1d2247;
+            --card-hover: #252b5a;
+            --line: #2f3668;
+            --text: #f1f2fa;
+            --muted: #a9aed3;
+            --gold: #f2c14e;
+            --fire: #ff7a4d;
+            --earth: #8bc86a;
+            --air: #7cc4e8;
+            --water: #6f8cff;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Noto Sans Georgian', 'Segoe UI', sans-serif;
+            background:
+                radial-gradient(circle at 20% 0%, #232a66 0%, transparent 45%),
+                radial-gradient(circle at 90% 10%, #3a1f5e 0%, transparent 40%),
+                var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .nav {
+            background: rgba(15, 18, 38, 0.85);
+            border-bottom: 1px solid var(--line);
+            padding: 14px 20px;
+        }
+        .nav-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .logo { font-weight: 700; font-size: 1.2rem; color: var(--gold); letter-spacing: 0.5px; }
+        .nav-links { display: flex; gap: 22px; font-size: 0.95rem; color: var(--muted); flex-wrap: wrap; }
+        .nav-links span:first-child { color: var(--text); border-bottom: 2px solid var(--gold); padding-bottom: 2px; }
+
+        .wrap { max-width: 1200px; margin: 0 auto; padding: 0 20px 60px; }
+
+        .hero { text-align: center; padding: 56px 0 32px; }
+        .hero h1 { font-size: clamp(1.9rem, 5vw, 3rem); font-weight: 700; margin-bottom: 12px; }
+        .hero p { color: var(--muted); max-width: 640px; margin: 0 auto; font-size: 1.05rem; }
+
+        .filters {
+            background: var(--bg-soft);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 18px;
+            display: flex;
+            gap: 18px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            margin-bottom: 32px;
+        }
+        .field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+        .field.grow { flex: 1 1 240px; }
+        .field > label, .field > .label { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+
+        input[type="text"] {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            color: var(--text);
+            padding: 11px 14px;
+            font: inherit;
+            width: 100%;
+        }
+        input[type="text"]::placeholder { color: #7e84b0; }
+        input[type="text"]:focus, button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+        .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+        .chip {
+            background: var(--card);
+            color: var(--text);
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            padding: 9px 16px;
+            font: inherit;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s;
+        }
+        .chip:hover { background: var(--card-hover); }
+        .chip.active { background: var(--gold); border-color: var(--gold); color: #1a1a2e; font-weight: 600; }
+        .chip.fire.active { background: var(--fire); border-color: var(--fire); }
+        .chip.earth.active { background: var(--earth); border-color: var(--earth); }
+        .chip.air.active { background: var(--air); border-color: var(--air); }
+        .chip.water.active { background: var(--water); border-color: var(--water); }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 22px; }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            transition: transform 0.2s, background 0.2s;
+            min-width: 0;
+        }
+        .card:hover { transform: translateY(-4px); background: var(--card-hover); }
+
+        .card-top { display: flex; align-items: center; gap: 16px; }
+        .symbol {
+            width: 72px; height: 72px; flex: none;
+            border-radius: 50%;
+            display: grid; place-items: center;
+            font-size: 2.4rem;
+            border: 2px solid currentColor;
+            background: rgba(255, 255, 255, 0.04);
+        }
+        .fire .symbol, .tag.fire { color: var(--fire); }
+        .earth .symbol, .tag.earth { color: var(--earth); }
+        .air .symbol, .tag.air { color: var(--air); }
+        .water .symbol, .tag.water { color: var(--water); }
+
+        .name { font-size: 1.5rem; font-weight: 700; color: var(--text); }
+        .dates { color: var(--muted); font-size: 0.9rem; }
+
+        .tag {
+            align-self: flex-start;
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 999px;
+            border: 1px solid currentColor;
+        }
+
+        .desc { border-top: 1px solid var(--line); padding-top: 12px; }
+        .desc h3 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--gold); margin-bottom: 4px; }
+        .desc p { font-size: 0.95rem; color: #d3d6ee; }
+
+        .empty { grid-column: 1 / -1; text-align: center; color: var(--muted); padding: 40px 0; }
+
+        footer { text-align: center; color: var(--muted); font-size: 0.85rem; padding: 24px; border-top: 1px solid var(--line); }
+
+        @media (max-width: 480px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="nav-inner">
+            <div class="logo">✦ ზოდიაქო</div>
+            <div class="nav-links">
+                <span>ზოდიაქოს ნიშნები</span>
+                <span>ჰოროსკოპი</span>
+                <span>თავსებადობა</span>
+                <span>კალენდარი</span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="wrap">
+        <section class="hero">
+            <h1>ზოდიაქოს თორმეტი ნიშანი</h1>
+            <p>იპოვე შენი ნიშანი, გაიგე, რომელ სტიქიას ეკუთვნის და როგორ ხასიათს მიეწერება ქალებში და მამაკაცებში.</p>
+        </section>
+
+        <section class="filters" aria-label="ფილტრები">
+            <div class="field grow">
+                <label for="nameSearch">ძებნა სახელით</label>
+                <input type="text" id="nameSearch" placeholder="მაგალითად: ლომი" autocomplete="off">
+            </div>
+            <div class="field">
+                <span class="label">სტიქია</span>
+                <div class="chips" id="elementChips">
+                    <button class="chip active" data-element="all">ყველა</button>
+                    <button class="chip fire" data-element="fire">ცეცხლი</button>
+                    <button class="chip earth" data-element="earth">მიწა</button>
+                    <button class="chip air" data-element="air">ჰაერი</button>
+                    <button class="chip water" data-element="water">წყალი</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="grid" id="grid" aria-live="polite"></section>
+    </main>
+
+    <footer>ზოდიაქოს ნიშნები · შემეცნებითი და გასართობი მიზნით</footer>
+
+    <script>
+        const ELEMENTS = { fire: 'ცეცხლი', earth: 'მიწა', air: 'ჰაერი', water: 'წყალი' };
+
+        const SIGNS = [
+            {
+                name: 'ვერძი', symbol: '♈', dates: '21 მარტი – 19 აპრილი', element: 'fire',
+                woman: 'ვერძის ქალი მხნეა და თავდაჯერებული. გადაწყვეტილებას სწრაფად იღებს, წინ წასვლას არ დაერიდება და სხვის ნებაზე არ დადის.',
+                man: 'ვერძის მამაკაცი დაბადებით წინამძღოლია: ენერგიული, ცხარე და გულახდილი. ახალ საქმეს გაბედულად შეუდგება, მაგრამ მოთმინება ეკლევა.'
+            },
+            {
+                name: 'ხარი', symbol: '♉', dates: '20 აპრილი – 20 მაისი', element: 'earth',
+                woman: 'ხარის ქალი წყნარია, მტკიცე და მოსიყვარულე. სიმშვიდეს, მყუდროებას და მშვენიერ საგნებს აფასებს; სიტყვას თუ მისცემს, არ გატეხს.',
+                man: 'ხარის მამაკაცი საიმედოა და შრომისმოყვარე. ნელა ფიქრობს, მაგრამ დაწყებულ საქმეს ბოლომდე მიიყვანს; ჯიუტობა მისი მთავარი ნაკლია.'
+            },
+            {
+                name: 'ტყუპები', symbol: '♊', dates: '21 მაისი – 20 ივნისი', element: 'air',
+                woman: 'ტყუპების ქალი მახვილგონივრულია და მოსაუბრე. ცნობისმოყვარეა, ადვილად ეგუება ახალს და საზოგადოებაში თავს თავისუფლად გრძნობს.',
+                man: 'ტყუპების მამაკაცი მოუსვენარია, მოხერხებული და მარჯვე ენის პატრონი. ბევრ რამეს სწავლობს ერთდროულად, მაგრამ ერთ საქმეზე დიდხანს ვერ ჩერდება.'
+            },
+            {
+                name: 'კირჩხიბი', symbol: '♋', dates: '21 ივნისი – 22 ივლისი', element: 'water',
+                woman: 'კირჩხიბის ქალი მზრუნველია და ნაზი. ოჯახი და ახლობლები მისთვის ყველაფერზე წინ დგას; გრძნობით ცხოვრობს და ადვილად ეწყინება.',
+                man: 'კირჩხიბის მამაკაცი ზედაპირზე მკაცრია, გულში კი ალერსიანი. სახლს და ოჯახს გულმოდგინედ იცავს, მაგრამ განცდებს იშვიათად გამოამჟღავნებს.'
+            },
+            {
+                name: 'ლომი', symbol: '♌', dates: '23 ივლისი – 22 აგვისტო', element: 'fire',
+                woman: 'ლომის ქალი ამაყია, გულუხვი და ყურადღების ცენტრში მყოფი. სითბოთი იზიდავს ხალხს და დიდსულოვნებით გამოირჩევა.',
+                man: 'ლომის მამაკაცი თავდაჯერებულია და დიდსულოვანი. ბუნებით ბელადია, ქება უყვარს; ამპარტავნება კი ზოგჯერ საკუთარ თავს აშორებს ახლობლებს.'
+            },
+            {
+                name: 'ქალწული', symbol: '♍', dates: '23 აგვისტო – 22 სექტემბერი', element: 'earth',
+                woman: 'ქალწულის ქალი გულმოდგინეა და დახვეწილი. წვრილმანსაც შეამჩნევს, წესრიგს უფრთხილდება და საკუთარ თავს მეტისმეტად მომთხოვნად უდგება.',
+                man: 'ქალწულის მამაკაცი გონიერია და ზუსტი. საქმეს მიზანმიმართულად აკეთებს, ცოტას ლაპარაკობს, თუმცა სიტყვით ყოველთვის საქმეს ამბობს.'
+            },
+            {
+                name: 'სასწორი', symbol: '♎', dates: '23 სექტემბერი – 22 ოქტომბერი', element: 'air',
+                woman: 'სასწორის ქალი მომხიბვლელია და თავაზიანი. სამართლიანობა და სიმშვიდე უყვარს, კონფლიქტს თავს არიდებს, თუმცა არჩევანის გაკეთება უჭირს.',
+                man: 'სასწორის მამაკაცი ზრდილობიანია, შეგუებული და მშვიდობისმოყვარე. ყველა მხარეს ისმენს, ამიტომ გადაწყვეტილებას ხშირად აგვიანებს.'
+            },
+            {
+                name: 'მორიელი', symbol: '♏', dates: '23 ოქტომბერი – 21 ნოემბერი', element: 'water',
+                woman: 'მორიელის ქალი მგზნებარეა და საიდუმლოებით მოსილი. გრძნობა ღრმა აქვს, ერთგულია, მაგრამ შეურაცხყოფას დიდხანს ინახავს გულში.',
+                man: 'მორიელის მამაკაცი ძლიერია, თავშეკავებული და დაკვირვებული. მიზანს ჯიუტად მისდევს; მეგობრობაშიც და მტრობაშიც ბოლომდე მიდის.'
+            },
+            {
+                name: 'მშვილდოსანი', symbol: '♐', dates: '22 ნოემბერი – 21 დეკემბერი', element: 'fire',
+                woman: 'მშვილდოსნის ქალი მხიარულია და თავისუფლებისმოყვარე. მოგზაურობა და ახალი ცოდნა იზიდავს; სიმართლეს პირდაპირ ამბობს.',
+                man: 'მშვილდოსნის მამაკაცი ოპტიმისტია და გულღია. ფართო თვალსაწიერი აქვს, დროს ერთ ადგილზე ჯდომით არ ატარებს და ბორკილებს ვერ იტანს.'
+            },
+            {
+                name: 'თხის რქა', symbol: '♑', dates: '22 დეკემბერი – 19 იანვარი', element: 'earth',
+                woman: 'თხის რქის ქალი თავშეკავებულია და მიზანდასახული. შრომით აღწევს წარმატებას; გარეგნულად მკაცრია, ახლობლებისთვის კი ერთგული და მზრუნველი.',
+                man: 'თხის რქის მამაკაცი პასუხისმგებლიანია და მოთმინებით აღჭურვილი. კარიერას ნელა, მაგრამ მტკიცედ აგებს და ზედმეტ სიტყვას არ იყენებს.'
+            },
+            {
+                name: 'მერწყული', symbol: '♒', dates: '20 იანვარი – 18 თებერვალი', element: 'air',
+                woman: 'მერწყულის ქალი დამოუკიდებელია და თავისებური. ახალ აზრებს იღებს, ადამიანებს ეხმარება და ბრბოს ბაძვა არ უყვარს.',
+                man: 'მერწყულის მამაკაცი გამომგონებელია და ორიგინალურად მოაზროვნე. მეგობრობას აფასებს, მაგრამ გრძნობებზე ლაპარაკი უძნელდება.'
+            },
+            {
+                name: 'თევზები', symbol: '♓', dates: '19 თებერვალი – 20 მარტი', element: 'water',
+                woman: 'თევზების ქალი მგრძნობიარეა, მეოცნებე და გულკეთილი. სხვის ტკივილს საკუთარივით განიცდის და ხელოვნებისკენ ბუნებრივად იზიდავს.',
+                man: 'თევზების მამაკაცი ნაზია, ფანტაზიით მდიდარი და თანამგრძნობი. რეალობას ხშირად ოცნებაში გარბის, ამიტომ პრაქტიკულ საკითხებში მხარდაჭერა სჭირდება.'
+            }
+        ];
+
+        const grid = document.getElementById('grid');
+        const search = document.getElementById('nameSearch');
+        const chips = document.querySelectorAll('.chip');
+        let currentElement = 'all';
+
+        function makeCard(s) {
+            const card = document.createElement('article');
+            card.className = 'card ' + s.element;
+            card.innerHTML =
+                '<div class="card-top">' +
+                    '<div class="symbol">' + s.symbol + '︎</div>' +
+                    '<div><div class="name">' + s.name + '</div><div class="dates">' + s.dates + '</div></div>' +
+                '</div>' +
+                '<span class="tag ' + s.element + '">' + ELEMENTS[s.element] + '</span>' +
+                '<div class="desc"><h3>ქალი</h3><p>' + s.woman + '</p></div>' +
+                '<div class="desc"><h3>მამაკაცი</h3><p>' + s.man + '</p></div>';
+            return card;
+        }
+
+        function render() {
+            const q = search.value.trim().toLowerCase();
+            const list = SIGNS.filter(function (s) {
+                return (currentElement === 'all' || s.element === currentElement) &&
+                       s.name.toLowerCase().includes(q);
+            });
+            grid.innerHTML = '';
+            if (!list.length) {
+                grid.innerHTML = '<p class="empty">ასეთი ნიშანი ვერ მოიძებნა. სცადე სხვა სახელი ან სტიქია.</p>';
+                return;
+            }
+            list.forEach(function (s) { grid.appendChild(makeCard(s)); });
+        }
+
+        search.addEventListener('input', render);
+        chips.forEach(function (chip) {
+            chip.addEventListener('click', function () {
+                chips.forEach(function (c) { c.classList.remove('active'); });
+                chip.classList.add('active');
+                currentElement = chip.dataset.element;
+                render();
+            });
+        });
+
+        render();
+
+        
+
+    </script>
+</body>
+</html>
