@@ -1,13 +1,12 @@
 'use strict';
 
 /* =========================================================
-   6. MUSIC — Giya Kancheli, "Yellow Leaves" (YouTube IFrame API)
-      A hidden YouTube player; the header button controls it.
+   6. MUSIC — one song per season (YouTube IFrame API).
+      Autumn is Giya Kancheli's "Yellow Leaves", the others are
+      calm music to code to. A hidden player; the header button controls it.
       Browsers block autoplay with sound, so if it fails we start
       on the first interaction — unless the visitor paused it before.
    ========================================================= */
-
-const YT_VIDEOS = ['XVAHq7fzDZk', 'SJ_9Oa8tx2c', 'JPhrc757gog', 'mpTPbaVyXIk']; // fallbacks if one is removed
 
 function loadYouTubeApi() {
     if (window.YT?.Player) return Promise.resolve(window.YT);
@@ -20,23 +19,36 @@ function loadYouTubeApi() {
     });
 }
 
-function initMusic() {
+/** Returns { select(season) } so the season picker can switch songs. */
+function initMusic(startSeason) {
     const btn = $('#music-btn');
     const iconBox = $('.music__icon', btn);
+    const title = $('.music__title', btn);
     const sub = $('.music__sub', btn);
     const STORAGE_KEY = 'js-leaves-music';
-    const DEFAULT_SUB = sub.textContent;
     const VOLUME = 60;
+    let season = startSeason;
     let player = null;
-    let videoIndex = 0;
+    let songIndex = 0;
     let volume = 0;
     let fadeId = null;
-    let wanted = false;   // intent: survives the fade-out delay
+    let wanted = false;         // intent: survives the fade-out delay
+    let fadeInOnPlay = false;   // a song is loading; fade it in once it really plays
 
     const storage = {
         get() { try { return localStorage.getItem(STORAGE_KEY); } catch { return null; } },
         set(v) { try { localStorage.setItem(STORAGE_KEY, v); } catch { /* ignore */ } },
     };
+
+    const song = () => season.songs[songIndex];
+
+    function showTrack() {
+        const { artist, track } = song();
+        btn.classList.remove('is-error');
+        title.textContent = artist;
+        sub.textContent = track;
+        btn.title = `${season.name}: ${artist}, ${track}`;
+    }
 
     function render(playing) {
         btn.classList.toggle('is-playing', playing);
@@ -54,34 +66,63 @@ function initMusic() {
         btn.title = text;
     }
 
-    function fadeTo(target, done) {
-        cancelAnimationFrame(fadeId);
-        const step = () => {
-            volume += Math.sign(target - volume) * 2;
-            if (Math.abs(target - volume) < 2) volume = target;
+    /** Volume ramp. setInterval keeps going (slowly) in a background tab, rAF would not. */
+    function fadeTo(target, ms, done) {
+        clearInterval(fadeId);
+        const from = volume;
+        const start = performance.now();
+        fadeId = setInterval(() => {
+            const t = Math.min(1, (performance.now() - start) / ms);
+            volume = Math.round(from + (target - from) * t);
             player.setVolume(volume);
-            if (volume === target) return done?.();
-            fadeId = requestAnimationFrame(step);
-        };
-        step();
+            if (t < 1) return;
+            clearInterval(fadeId);
+            done?.();
+        }, 30);
     }
 
     function play() {
         if (!player) return;
         wanted = true;
         render(true);
-        if (player.getPlayerState() !== YT.PlayerState.PLAYING) {
+        if (player.getPlayerState() === YT.PlayerState.PLAYING) {
+            fadeTo(VOLUME, 600);
+        } else {
             volume = 0;
             player.setVolume(0);
+            fadeInOnPlay = true;
         }
         player.playVideo();
-        fadeTo(VOLUME);
     }
 
     function pause() {
         wanted = false;
+        fadeInOnPlay = false;
         render(false);
-        fadeTo(0, () => player.pauseVideo());
+        fadeTo(0, 500, () => player.pauseVideo());
+    }
+
+    /** Switches to another season's song: the old one fades out, the new one fades in. */
+    function select(next) {
+        if (next === season) {
+            if (!wanted && player) { storage.set('on'); play(); }
+            return;
+        }
+        season = next;
+        songIndex = 0;
+        if (!player) return showTrack();          // still loading: onReady picks up the new season
+        showTrack();
+        storage.set('on');
+        const load = () => {
+            volume = 0;
+            player.setVolume(0);
+            wanted = true;
+            fadeInOnPlay = true;
+            render(true);
+            player.loadVideoById(song().id);
+        };
+        if (wanted && volume > 0) fadeTo(0, 700, load);
+        else load();
     }
 
     function startOnFirstInteraction() {
@@ -89,7 +130,8 @@ function initMusic() {
         const cleanup = () => events.forEach(ev => window.removeEventListener(ev, handler, true));
         const handler = (e) => {
             cleanup();
-            if (btn.contains(e.target) || storage.get() === 'off' || !player) return;
+            // the player's own buttons start the music themselves
+            if (e.target.closest?.('.player') || storage.get() === 'off' || !player) return;
             play();
         };
         events.forEach(ev => window.addEventListener(ev, handler, { capture: true, passive: true }));
@@ -108,8 +150,9 @@ function initMusic() {
 
     function onReady() {
         btn.classList.remove('is-loading');
-        sub.textContent = DEFAULT_SUB;
+        showTrack();
         player.setVolume(0);
+        if (season !== startSeason) player.cueVideoById(song().id);   // picked while loading
         if (storage.get() === 'off') return render(false);
 
         play();
@@ -131,17 +174,24 @@ function initMusic() {
         } else if (data === S.PAUSED && wanted && volume > 0) {
             wanted = false;                // paused from outside (e.g. media keys)
             render(false);
-        } else if (data === S.PLAYING && !wanted) {
-            wanted = true;
-            render(true);
+        } else if (data === S.PLAYING) {
+            if (!wanted) {
+                wanted = true;
+                render(true);
+            }
+            if (fadeInOnPlay) {
+                fadeInOnPlay = false;
+                fadeTo(VOLUME, 1500);
+            }
         }
     }
 
     function onError() {
-        videoIndex++;
-        if (videoIndex < YT_VIDEOS.length) {
-            player.cueVideoById(YT_VIDEOS[videoIndex]);
-            if (wanted) player.playVideo();
+        songIndex++;
+        if (songIndex < season.songs.length) {
+            showTrack();
+            if (wanted) player.loadVideoById(song().id);
+            else player.cueVideoById(song().id);
         } else {
             showError('ვიდეო ვერ ჩაიტვირთა');
         }
@@ -149,9 +199,11 @@ function initMusic() {
 
     // YouTube refuses to play inside pages opened straight from disk
     if (location.protocol === 'file:') {
-        return showError('გახსენი Live Server-ით');
+        showError('გახსენი Live Server-ით');
+        return { select() {} };
     }
 
+    showTrack();
     btn.classList.add('is-loading');
     sub.textContent = 'იტვირთება...';
 
@@ -164,10 +216,12 @@ function initMusic() {
             player = new YT.Player('yt-player', {
                 width: 200,
                 height: 200,
-                videoId: YT_VIDEOS[0],
+                videoId: song().id,
                 playerVars: { autoplay: 0, controls: 0, disablekb: 1, playsinline: 1, rel: 0 },
                 events: { onReady, onStateChange, onError },
             });
         })
         .catch(() => showError('YouTube ვერ ჩაიტვირთა'));
+
+    return { select };
 }

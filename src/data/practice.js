@@ -3,8 +3,8 @@
 /* =========================================================
    PRACTICE DATA
    BUGS     — find the line with the bug
-   PUZZLES  — put the steps in order; the result runs live
    OUTPUTS  — predict what the code prints
+   (PUZZLES live in puzzles.js)
    ========================================================= */
 
 /**
@@ -164,141 +164,6 @@ const BUGS = [
         fix: '  const post = await res.json();',
         hint: 'res.json() მყისიერად აბრუნებს მონაცემს თუ Promise-ს?',
         explain: 'res.json() Promise-ს აბრუნებს. await-ის გარეშე post არის Promise და post.title იქნება undefined. await res.json() უნდა იყოს.',
-    },
-];
-
-/**
- * Each step has a rank. Steps that may swap places share a rank,
- * so any order where ranks never go down is accepted.
- */
-const PUZZLES = [
-    {
-        title: 'მასივი ეკრანზე',
-        goal: 'ხილის მასივი სიად უნდა გამოჩნდეს ეკრანზე.',
-        topics: ['variables', 'loops', 'dom'],
-        steps: [
-            { rank: 1, code: "const fruits = ['ვაშლი', 'მსხალი', 'ატამი'];" },
-            { rank: 1, code: "const list = document.querySelector('#list');" },
-            { rank: 2, code: 'fruits.forEach((fruit) => {' },
-            { rank: 3, code: "  const li = document.createElement('li');" },
-            { rank: 4, code: '  li.textContent = fruit;' },
-            { rank: 4, code: '  list.append(li);' },
-            { rank: 5, code: '});' },
-        ],
-        run(preview) {
-            const fruits = ['ვაშლი', 'მსხალი', 'ატამი'];
-            const list = document.createElement('ul');
-            list.className = 'demo-list';
-            preview.append(list);
-            fruits.forEach((fruit, i) => {
-                const li = document.createElement('li');
-                li.textContent = fruit;
-                li.style.animationDelay = `${i * 120}ms`;
-                list.append(li);
-            });
-        },
-    },
-    {
-        title: 'ქულების შემოწმება',
-        goal: 'დაბეჭდე მხოლოდ ის ქულები, რომლებიც 60-ზე მეტი ან ტოლია.',
-        topics: ['variables', 'loops', 'conditions'],
-        steps: [
-            { rank: 1, code: 'const scores = [45, 82, 67, 91];' },
-            { rank: 2, code: 'for (const score of scores) {' },
-            { rank: 3, code: '  if (score >= 60) {' },
-            { rank: 4, code: "    console.log(score + ' ჩააბარა');" },
-            { rank: 5, code: '  }' },
-            { rank: 6, code: '}' },
-        ],
-        run(preview) {
-            const scores = [45, 82, 67, 91];
-            const lines = [];
-            for (const score of scores) {
-                if (score >= 60) lines.push(`${score} ჩააბარა`);
-            }
-            preview.append(consoleBox(lines));
-        },
-    },
-    {
-        title: 'ფოთლების ფილტრი',
-        goal: 'შექმენი ფოთლები კლასით და დაითვალე ყვითლები.',
-        topics: ['classes', 'functions', 'variables'],
-        steps: [
-            { rank: 1, code: 'class Leaf {\n  constructor(color) { this.color = color; }\n}' },
-            { rank: 1, code: "const colors = ['green', 'yellow', 'green', 'yellow'];" },
-            { rank: 2, code: 'const leaves = colors.map((c) => new Leaf(c));' },
-            { rank: 3, code: "const yellow = leaves.filter((l) => l.color === 'yellow');" },
-            { rank: 4, code: 'console.log(yellow.length); // 2' },
-        ],
-        run(preview) {
-            class Leaf { constructor(color) { this.color = color; } }
-            const leaves = ['green', 'yellow', 'green', 'yellow'].map(c => new Leaf(c));
-            const yellow = leaves.filter(l => l.color === 'yellow');
-            const row = document.createElement('div');
-            row.className = 'demo-leaves';
-            row.innerHTML = leaves.map(l => `<span class="demo-leaf ${l.color === 'yellow' ? 'dry' : ''}">${icon('leaf')}</span>`).join('');
-            preview.append(row, consoleBox([`yellow.length = ${yellow.length}`]));
-        },
-    },
-    {
-        title: 'მთვლელი ღილაკი',
-        goal: 'ღილაკი ითვლის დაჭერებს და რიცხვი გვერდის განახლების შემდეგაც რჩება.',
-        topics: ['dom', 'bom', 'functions'],
-        steps: [
-            { rank: 1, code: "const btn = document.querySelector('#counter');" },
-            { rank: 1, code: "let count = Number(localStorage.getItem('count')) || 0;" },
-            { rank: 2, code: 'btn.textContent = count;' },
-            { rank: 3, code: "btn.addEventListener('click', () => {" },
-            { rank: 4, code: '  count++;' },
-            { rank: 5, code: "  localStorage.setItem('count', count);" },
-            { rank: 5, code: '  btn.textContent = count;' },
-            { rank: 6, code: '});' },
-        ],
-        run(preview) {
-            const KEY = 'js-leaves-counter';
-            const read = () => { try { return Number(localStorage.getItem(KEY)) || 0; } catch { return 0; } };
-            let count = read();
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'btn btn--primary demo-counter';
-            btn.textContent = count;
-            btn.addEventListener('click', () => {
-                count++;
-                try { localStorage.setItem(KEY, count); } catch { /* ignore */ }
-                btn.textContent = count;
-            });
-            const note = document.createElement('p');
-            note.className = 'demo-note';
-            note.textContent = 'დააჭირე ღილაკს, მერე გვერდი განაახლე: რიცხვი დარჩება.';
-            preview.append(btn, note);
-        },
-    },
-    {
-        title: 'API-დან სახელები',
-        goal: 'სერვერიდან წამოიღე მომხმარებლები და მათი სახელები აჩვენე.',
-        topics: ['api', 'functions', 'dom'],
-        steps: [
-            { rank: 1, code: 'async function showUsers() {' },
-            { rank: 2, code: "  const res = await fetch('https://jsonplaceholder.typicode.com/users');" },
-            { rank: 3, code: '  const users = await res.json();' },
-            { rank: 4, code: '  const names = users.map((u) => u.name);' },
-            { rank: 5, code: "  output.textContent = names.join(', ');" },
-            { rank: 6, code: '}' },
-            { rank: 7, code: 'showUsers();' },
-        ],
-        async run(preview) {
-            const box = consoleBox(['იტვირთება...']);
-            preview.append(box);
-            try {
-                const res = await fetch('https://jsonplaceholder.typicode.com/users');
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                const users = await res.json();
-                box.textContent = users.slice(0, 5).map(u => u.name).join(', ') + ' …';
-            } catch (err) {
-                box.textContent = `ვერ ჩაიტვირთა (${err.message}). შეამოწმე ინტერნეტი.`;
-                box.classList.add('is-error');
-            }
-        },
     },
 ];
 
